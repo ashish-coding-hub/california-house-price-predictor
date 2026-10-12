@@ -1,84 +1,56 @@
 # California House Price Predictor 🏡
 
-A Machine Learning web application that predicts the median house value of a California neighbourhood using a trained Random Forest Regressor.
+A Machine Learning web application that predicts California house prices using a trained Random Forest Regressor.
 
-## 🚀 Features
+## 🚀 Live Demo
 
-- Predicts estimated median house value in US Dollars (USD).
-- Displays approximate Indian Rupee (INR) conversion.
-- Uses a preprocessing pipeline for input transformation.
-- Validates user inputs before prediction.
-- Responsive web interface built with HTML and CSS.
+**Try the live website here:**
+
+https://california-house-price-predictor-urcg.onrender.com/
+
+## ✨ Features
+
+- Predicts California house prices.
+- Uses a trained Random Forest Regression model.
+- Includes a preprocessing pipeline.
+- Simple and responsive web interface.
 - Built with Flask and Scikit-learn.
 
 ## 🛠️ Technologies Used
 
 - Python
-- Flask
 - Pandas
 - NumPy
 - Scikit-learn
-- Joblib
+- Flask
 - HTML and CSS
+- Joblib
+- Render
 
-## 📁 Project Structure
+## 💻 Run Locally
 
-```text
-california-house-price-predictor/
-├── app.py
-├── model.pkl
-├── pipeline.pkl
-├── requirements.txt
-├── .python-version
-├── README.md
-└── templates/
-    └── index.html
-```
+1. Clone the repository:
 
-## ⚙️ Run Locally
+   `git clone https://github.com/ashish-coding-hub/california-house-price-predictor.git`
 
-1. Clone this repository:
+2. Open the project folder:
 
-   ```bash
-   git clone https://github.com/ashish-coding-hub/california-house-price-predictor.git
-   ```
+   `cd california-house-price-predictor`
 
-2. Open the project directory:
+3. Install dependencies:
 
-   ```bash
-   cd california-house-price-predictor
-   ```
+   `pip install -r requirements.txt`
 
-3. Install the dependencies:
+4. Run the application:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Start the Flask application:
-
-   ```bash
-   python app.py
-   ```
-
-5. Open `http://127.0.0.1:5000` in your browser.
-
-## 📊 Model
-
-The project uses a trained Random Forest Regressor with a preprocessing pipeline to generate predictions from California Housing dataset features.
-
-The prediction represents the estimated median house value of a neighbourhood, not the price of an individual property. The dataset is based on 1990 California census data, so predictions should not be treated as current market valuations.
-
-## 🌐 Deployment
-
-The application can be deployed using a Python-compatible hosting platform such as Render.
-
-- **Build command:** `pip install -r requirements.txt`
-- **Start command:** `gunicorn app:app`
+   `python app.py`
 
 ## 👨‍💻 Author
 
 **Ashish Singh**
 
-- GitHub: [ashish-coding-hub](https://github.com/ashish-coding-hub)
-- LinkedIn: [Ashish Singh](https://linkedin.com/in/ashish-singh-4012ab342)
+GitHub: https://github.com/ashish-coding-hub
+
+## 📌 Project Purpose
+
+This project demonstrates an end-to-end Machine Learning workflow, including model training, data preprocessing, model saving, and web deployment.
