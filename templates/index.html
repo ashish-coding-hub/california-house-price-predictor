@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Estimate the median house value of a California housing area using a Random Forest model. Developed by Ashish Singh.">
+    <meta name="theme-color" content="#080808">
+    <title>California House Price Predictor | Ashish Singh</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #080808;
+            --panel: #111111;
+            --panel-soft: #151515;
+            --panel-hover: #1a1a1a;
+            --text: #f5f5f5;
+            --muted: #a3a3a3;
+            --line: #2c2c2c;
+            --amber: #f2a541;
+            --amber-bright: #ffc069;
+            --amber-soft: rgba(242, 165, 65, .12);
+            --danger-bg: #2a1010;
+            --danger-line: #7a2e2e;
+            --danger-text: #ffb4b4;
+            --success: #a8e6bd;
+            --radius: 16px;
+            --shadow: 0 20px 55px rgba(0, 0, 0, .28);
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+        body {
+            margin: 0;
+            background: radial-gradient(ellipse at 78% 0%, rgba(242,165,65,.055), transparent 34%), var(--bg);
+            color: var(--text);
+            font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+            line-height: 1.55;
+        }
+        a { color: inherit; }
+        button, input, select { font: inherit; }
+        :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+        .layout { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); min-height: 100vh; }
+
+        .hero {
+            background: linear-gradient(155deg, #101010 0%, #080808 58%);
+            border-right: 1px solid var(--line);
+            padding: 42px 30px 26px;
+            display: flex; flex-direction: column; gap: 28px;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto;
+        }
+        .brand-row { display: flex; align-items: center; gap: 11px; margin-bottom: 25px; }
+        .brand-mark {
+            width: 38px; height: 38px; display: grid; place-items: center;
+            border-radius: 12px; background: var(--amber); color: #090909; font-weight: 900;
+            box-shadow: 0 0 28px rgba(242,165,65,.12);
+        }
+        .brand-name { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; }
+        .eyebrow { color: var(--amber); text-transform: uppercase; font-size: 11px; letter-spacing: .18em; font-weight: 800; margin: 0 0 10px; }
+        .hero h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 3vw, 41px); line-height: 1.08; margin: 0; font-weight: 700; letter-spacing: -.025em; }
+        .hero h1 em { color: var(--amber); font-weight: 500; }
+        .lead { color: #b3b3b3; margin: 14px 0 0; font-size: 14px; }
+        .model-pill { display: inline-flex; align-items: center; gap: 8px; width: fit-content; border: 1px solid #393027; background: rgba(242,165,65,.07); color: #f4d6ae; padding: 7px 10px; border-radius: 999px; font-size: 12px; margin-top: 18px; }
+        .model-pill::before { content: ""; width: 7px; height: 7px; background: var(--amber); border-radius: 50%; box-shadow: 0 0 10px rgba(242,165,65,.65); }
+        .section-label { color: #777; text-transform: uppercase; font-size: 11px; letter-spacing: .16em; font-weight: 800; margin: 0 0 14px; }
+        .steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 16px; }
+        .steps li { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 12px; align-items: start; }
+        .steps li::before { counter-increment: step; content: "0" counter(step); width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid #59452d; border-radius: 10px; color: var(--amber); font-size: 11px; font-weight: 800; }
+        .steps strong { display: block; font-size: 13px; margin: 1px 0 3px; }
+        .steps span { color: var(--muted); font-size: 12px; }
+        .stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+        .stat { background: #121212; border: 1px solid var(--line); border-radius: 12px; padding: 11px 9px; min-width: 0; }
+        .stat b { display: block; font-family: Georgia, serif; font-size: clamp(14px, 1.4vw, 18px); overflow-wrap: anywhere; }
+        .stat span { display: block; font-size: 10px; color: var(--muted); margin-top: 3px; }
+        .stats-note { margin: 10px 0 0; font-size: 11px; color: var(--muted); }
+        .dev { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+        .dev b { display: block; color: var(--text); font-size: 16px; margin-top: 2px; }
+        .links { margin-top: 9px; display: flex; gap: 17px; flex-wrap: wrap; }
+        .dev a { color: var(--amber); text-decoration: none; border-bottom: 1px solid transparent; }
+        .dev a:hover { border-bottom-color: var(--amber); }
+
+        .main { width: 100%; max-width: 970px; padding: 38px clamp(18px, 4vw, 50px) 30px; }
+        .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 23px; }
+        .topline p { margin: 0; color: var(--muted); font-size: 12px; }
+        .status { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #111; padding: 7px 10px; border-radius: 999px; color: #cecece; font-size: 11px; white-space: nowrap; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+        .result { position: relative; overflow: hidden; background: linear-gradient(135deg, #17130e, #111 56%); border: 1px solid #4b3822; border-radius: var(--radius); padding: clamp(22px, 4vw, 30px); margin-bottom: 22px; box-shadow: var(--shadow); }
+        .result::after { content: "$"; position: absolute; right: 24px; top: -44px; font-family: Georgia, serif; font-size: 220px; line-height: 1; color: rgba(242,165,65,.045); pointer-events: none; }
+        .result-inner { position: relative; z-index: 1; }
+        .result h2 { margin: 0 0 7px; font-size: 12px; color: #c6b39a; text-transform: uppercase; letter-spacing: .13em; font-weight: 700; }
+        .price-main { font-family: Georgia, "Times New Roman", serif; font-size: clamp(38px, 6vw, 60px); font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+        .price-inr { color: #c1b8ac; margin-top: 7px; font-size: 15px; overflow-wrap: anywhere; }
+        .result-meta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 17px; }
+        .result-tag { background: rgba(242,165,65,.10); border: 1px solid #57432a; color: #f0d0a5; padding: 5px 9px; border-radius: 7px; font-size: 11px; }
+        .range { margin-top: 24px; }
+        .range-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+        .range-top span:nth-child(2) { color: var(--muted); font-weight: 500; }
+        .range-bar { position: relative; height: 9px; border-radius: 999px; background: #34302a; }
+        .range-fill { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(90deg, #83531b, var(--amber)); }
+        .range-pin { position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--amber); box-shadow: 0 0 0 2px #17130e; transform: translate(-50%, -50%); }
+        .range-note, .fine { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+        .fine { margin-top: 17px; border-top: 1px solid #33291e; padding-top: 13px; }
+        .error { background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-text); border-radius: 12px; padding: 15px 17px; margin-bottom: 22px; overflow-wrap: anywhere; }
+        .error strong { display: block; margin-bottom: 3px; }
+
+        .form-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin: 30px 0 17px; }
+        .form-heading h2 { font-family: Georgia, serif; font-size: 26px; margin: 0; letter-spacing: -.02em; }
+        .form-heading p { color: var(--muted); font-size: 12px; margin: 5px 0 0; }
+        .completion { flex: 0 0 min(180px, 38%); }
+        .completion-label { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 10px; margin-bottom: 7px; }
+        .completion-track { height: 5px; background: #282828; border-radius: 99px; overflow: hidden; }
+        .completion-bar { width: 0; height: 100%; border-radius: 99px; background: var(--amber); transition: width .2s ease; }
+        form { display: grid; gap: 17px; }
+        fieldset { border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(140deg, #121212, #0e0e0e); margin: 0; padding: 21px 22px 23px; min-width: 0; }
+        legend { padding: 0 8px; font-weight: 750; font-size: 14px; }
+        .legend-wrap { display: inline-flex; align-items: center; gap: 8px; }
+        .legend-number { width: 23px; height: 23px; display: inline-grid; place-items: center; background: var(--amber-soft); color: var(--amber); border-radius: 7px; font-size: 11px; }
+        .grid-fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px 20px; }
+        .field { min-width: 0; }
+        .field.wide { grid-column: 1 / -1; }
+        label { display: block; font-weight: 650; margin-bottom: 7px; font-size: 12px; color: #dedede; }
+        .field-control { position: relative; }
+        input, select { width: 100%; min-height: 46px; padding: 11px 12px; color: var(--text); background: #090909; border: 1px solid #333; border-radius: 9px; outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
+        input:hover, select:hover { border-color: #685033; }
+        input:focus, select:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(242,165,65,.12); background: #0d0b08; }
+        input:invalid:not(:placeholder-shown) { border-color: #874949; }
+        .hint { display: block; color: #888; font-size: 11px; margin-top: 6px; line-height: 1.45; }
+        .form-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 3px; }
+        .action-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .btn { min-height: 45px; padding: 11px 19px; border: 1px solid transparent; border-radius: 10px; background: var(--amber); color: #111; font-weight: 800; font-size: 13px; cursor: pointer; transition: background .15s, transform .15s, border-color .15s; }
+        .btn:hover { background: var(--amber-bright); transform: translateY(-1px); }
+        .btn:disabled { background: #5c5c5c; color: #ddd; cursor: wait; transform: none; }
+        .btn-secondary { background: #171717; color: #ddd; border-color: #393939; }
+        .btn-secondary:hover { background: #222; border-color: #575757; }
+        .form-note { color: var(--muted); font-size: 11px; margin: 0; }
+        .about { margin-top: 22px; padding: 15px 16px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 12px; background: #0e0e0e; }
+        .about strong { color: #e2e2e2; }
+        .footer { margin-top: 28px; padding-top: 17px; border-top: 1px solid var(--line); color: #777; font-size: 11px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .footer strong { color: #cfcfcf; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+        @media (max-width: 950px) {
+            .layout { grid-template-columns: 1fr; }
+            .hero { position: static; height: auto; overflow: visible; padding: 27px 24px; border-right: 0; border-bottom: 1px solid var(--line); gap: 23px; }
+            .brand-row { margin-bottom: 18px; }
+            .hero h1 { font-size: 34px; max-width: 18ch; }
+            .hero-top { max-width: 760px; }
+            .steps { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+            .steps li { grid-template-columns: 28px minmax(0,1fr); gap: 9px; }
+            .steps li::before { width: 28px; height: 28px; }
+            .dev { margin-top: 0; }
+            .main { max-width: 850px; margin: 0 auto; padding: 27px 22px 26px; }
+        }
+        @media (max-width: 620px) {
+            .hero { padding: 23px 17px; }
+            .hero h1 { font-size: 31px; }
+            .steps { grid-template-columns: 1fr; gap: 12px; }
+            .stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+            .main { padding: 21px 14px 22px; }
+            .topline { align-items: flex-start; }
+            .topline p { max-width: 22ch; }
+            .result { padding: 22px 17px; }
+            .result::after { font-size: 160px; right: 8px; top: -25px; }
+            .form-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+            .completion { flex-basis: auto; width: 100%; }
+            .grid-fields { grid-template-columns: 1fr; gap: 15px; }
+            .field.wide { grid-column: auto; }
+            fieldset { padding: 18px 15px 20px; }
+            .form-actions { align-items: stretch; flex-direction: column; }
+            .action-group { display: grid; grid-template-columns: 1fr 1fr; }
+            .action-group .btn:first-child { grid-column: 1 / -1; }
+            .action-group .btn { width: 100%; }
+            .form-note { line-height: 1.5; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="hero">
+        <div class="hero-top">
+            <div class="brand-row"><div class="brand-mark" aria-hidden="true">H</div><div class="brand-name">Housing Lab</div></div>
+            <p class="eyebrow">Machine learning project</p>
+            <h1>California House Price <em>Predictor</em></h1>
+            <p class="lead">Explore an estimated median house value using location, housing and income details from California census areas.</p>
+            <div class="model-pill">Random Forest Regressor</div>
+        </div>
+
+        <div>
+            <p class="section-label">How it works</p>
+            <ol class="steps">
+                <li><div><strong>Choose a location</strong><span>Enter the area's latitude and longitude.</span></div></li>
+                <li><div><strong>Add area details</strong><span>Describe rooms, population and income.</span></div></li>
+                <li><div><strong>Get an estimate</strong><span>Review the model's predicted area value.</span></div></li>
+            </ol>
+        </div>
+
+        {% if metrics %}
+        <div>
+            <p class="section-label">Model performance</p>
+            <div class="stats">
+                {% if metrics.get('mae') is not none %}<div class="stat"><b>${{ "{:,.0f}".format(metrics['mae']) }}</b><span>Mean absolute error</span></div>{% endif %}
+                {% if metrics.get('rmse') is not none %}<div class="stat"><b>${{ "{:,.0f}".format(metrics['rmse']) }}</b><span>RMSE</span></div>{% endif %}
+                {% if metrics.get('r2') is not none %}<div class="stat"><b>{{ "{:.2f}".format(metrics['r2']) }}</b><span>R² score</span></div>{% endif %}
+            </div>
+            <p class="stats-note">{{ metrics.get('model', 'Random Forest Regressor') }} · evaluated on a held-out test set.</p>
+        </div>
+        {% endif %}
+
+        <div class="dev">
+            <div>Created by</div><b>Ashish Singh</b>
+            <div class="links">
+                <a href="https://github.com/ashish-coding-hub" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+                <a href="https://linkedin.com/in/ashish-singh-4012ab342" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="topline">
+            <p>Enter the area details below to generate a prediction.</p>
+            <div class="status"><span class="status-dot" aria-hidden="true"></span>Prediction tool</div>
+        </div>
+
+        {% if dollars is not none %}
+        <section class="result" aria-live="polite" id="result">
+            <div class="result-inner">
+                <h2>Estimated median house value</h2>
+                <div class="price-main">${{ "{:,.0f}".format(dollars) }}</div>
+                <div class="price-inr">Approximately ₹{{ "{:,.0f}".format(rupees) }} at ₹{{ usd_to_inr }} per USD</div>
+                <div class="result-meta"><span class="result-tag">Random Forest estimate</span><span class="result-tag">Area-level value</span></div>
+
+                {% if low is not none and high is not none and high > low %}
+                {% set pos = ((dollars - low) / (high - low) * 100) %}
+                {% set pos = [[pos, 0]|max, 100]|min %}
+                <div class="range">
+                    <div class="range-top"><span>${{ "{:,.0f}".format(low) }}</span><span>Model range</span><span>${{ "{:,.0f}".format(high) }}</span></div>
+                    <div class="range-bar" role="img" aria-label="Model range from ${{ '{:,.0f}'.format(low) }} to ${{ '{:,.0f}'.format(high) }}">
+                        <div class="range-fill"></div><div class="range-pin" id="range-pin" data-pos="{{ '%.1f'|format(pos) }}"></div>
+                    </div>
+                    <p class="range-note">This range reflects variation across the model's trees, if provided by the backend. It is not a formal confidence interval.</p>
+                </div>
+                {% endif %}
+                <p class="fine">This model uses historical California census-area data. It estimates a neighbourhood's median value, not the current selling price of a specific property.</p>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if error %}
+        <section class="error" role="alert" id="error"><strong>Prediction could not be completed</strong>{{ error }}</section>
+        {% endif %}
+
+        <div class="form-heading">
+            <div><h2>Property area details</h2><p>Complete the fields to estimate the area's median value.</p></div>
+            <div class="completion" aria-live="polite">
+                <div class="completion-label"><span>Form completion</span><span id="completion-count">0 of 8 numeric fields</span></div>
+                <div class="completion-track" role="progressbar" aria-label="Form completion" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0" id="completion-progress"><div class="completion-bar" id="completion-bar"></div></div>
+            </div>
+        </div>
+
+        <form method="POST" action="/" id="predict-form">
+            <fieldset>
+                <legend><span class="legend-wrap"><span class="legend-number">01</span>Location</span></legend>
+                <div class="grid-fields">
+                    <div class="field">
+                        <label for="longitude">Longitude</label>
+                        <input id="longitude" name="longitude" type="number" step="any" min="-125" max="-113" value="{{ form_data['longitude'] }}" required inputmode="decimal">
+                        <span class="hint">East–west coordinate. Valid range: −125 to −113.</span>
+                    </div>
+                    <div class="field">
+                        <label for="latitude">Latitude</label>
+                        <input id="latitude" name="latitude" type="number" step="any" min="32" max="42.5" value="{{ form_data['latitude'] }}" required inputmode="decimal">
+                        <span class="hint">North–south coordinate. Valid range: 32 to 42.5.</span>
+                    </div>
+                    <div class="field wide">
+                        <label for="ocean_proximity">Ocean proximity</label>
+                        <select id="ocean_proximity" name="ocean_proximity" required>
+                            {% for option in ocean_options %}
+                                <option value="{{ option }}" {% if form_data['ocean_proximity'] == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="hint">Choose the category that matches the area's relationship to the coast.</span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><span class="legend-wrap"><span class="legend-number">02</span>Housing and income</span></legend>
+                <div class="grid-fields">
+                    <div class="field">
+                        <label for="housing_median_age">Median house age (years)</label>
+                        <input id="housing_median_age" name="housing_median_age" type="number" step="any" min="0" max="100" value="{{ form_data['housing_median_age'] }}" required inputmode="decimal">
+                    </div>
+                    <div class="field">
+                        <label for="median_income">Median income</label>
+                        <input id="median_income" name="median_income" type="number" step="any" min="0.1" max="20" value="{{ form_data['median_income'] }}" required inputmode="decimal">
+                        <span class="hint">Dataset units: $10,000. For example, 4.0 represents about $40,000.</span>
+                    </div>
+                    <div class="field">
+                        <label for="total_rooms">Total rooms</label>
+                        <input id="total_rooms" name="total_rooms" type="number" step="any" min="1" value="{{ form_data['total_rooms'] }}" required inputmode="decimal">
+                        <span class="hint">Total rooms recorded for the area.</span>
+                    </div>
+                    <div class="field">
+                        <label for="total_bedrooms">Total bedrooms</label>
+                        <input id="total_bedrooms" name="total_bedrooms" type="number" step="any" min="0" value="{{ form_data['total_bedrooms'] }}" required inputmode="decimal">
+                        <span class="hint">Must not exceed the total rooms.</span>
+                    </div>
+                    <div class="field">
+                        <label for="population">Population</label>
+                        <input id="population" name="population" type="number" step="any" min="1" value="{{ form_data['population'] }}" required inputmode="decimal">
+                    </div>
+                    <div class="field">
+                        <label for="households">Households</label>
+                        <input id="households" name="households" type="number" step="any" min="1" value="{{ form_data['households'] }}" required inputmode="decimal">
+                        <span class="hint">Number of households recorded for the area.</span>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <div class="action-group">
+                    <button class="btn" type="submit" id="submit-btn">Predict house value&nbsp; →</button>
+                    <button class="btn btn-secondary" type="button" id="sample-btn">Use sample data</button>
+                    <button class="btn btn-secondary" type="reset" id="reset-btn">Reset fields</button>
+                </div>
+                <p class="form-note" id="form-message">Prediction usually takes a moment. All fields are required.</p>
+            </div>
+        </form>
+
+        <div class="about"><strong>About this estimate:</strong> The model uses the values you enter and the saved preprocessing pipeline. Results are for learning and demonstration; historical area-level predictions should not be treated as current market valuations or financial advice.</div>
+
+        <footer class="footer"><span>Built with Flask, pandas and scikit-learn.</span><span>Developed by <strong>Ashish Singh</strong></span></footer>
+    </main>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('predict-form');
+    if (!form) return;
+
+    const numericIds = ['longitude', 'latitude', 'housing_median_age', 'median_income', 'total_rooms', 'total_bedrooms', 'population', 'households'];
+    const countLabel = document.getElementById('completion-count');
+    const progress = document.getElementById('completion-progress');
+    const bar = document.getElementById('completion-bar');
+    const message = document.getElementById('form-message');
+    const submitBtn = document.getElementById('submit-btn');
+    const initialSubmitText = submitBtn.textContent;
+
+    function updateProgress() {
+        let complete = 0;
+        numericIds.forEach(function (id) {
+            const field = document.getElementById(id);
+            if (field && field.value.trim() !== '' && field.checkValidity()) complete += 1;
+        });
+        if (countLabel) countLabel.textContent = complete + ' of ' + numericIds.length + ' numeric fields';
+        if (bar) bar.style.width = (complete / numericIds.length * 100) + '%';
+        if (progress) progress.setAttribute('aria-valuenow', String(complete));
+        if (message && !form.dataset.submitting) {
+            message.textContent = complete === numericIds.length
+                ? 'Numeric fields look complete. Check the values before predicting.'
+                : 'Prediction usually takes a moment. All fields are required.';
+        }
+    }
+
+    numericIds.forEach(function (id) {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener('input', updateProgress);
+            field.addEventListener('change', updateProgress);
+        }
+    });
+
+    const sampleBtn = document.getElementById('sample-btn');
+    if (sampleBtn) {
+        sampleBtn.addEventListener('click', function () {
+            const sample = {
+                longitude: '-122.0', latitude: '37.5', housing_median_age: '29', median_income: '4.2',
+                total_rooms: '2200', total_bedrooms: '450', population: '1200', households: '400'
+            };
+            Object.keys(sample).forEach(function (id) {
+                const field = document.getElementById(id);
+                if (field) field.value = sample[id];
+            });
+            const ocean = document.getElementById('ocean_proximity');
+            if (ocean) ocean.value = '<1H OCEAN';
+            updateProgress();
+            if (message) message.textContent = 'Sample values added. You can edit them before predicting.';
+        });
+    }
+
+    form.addEventListener('reset', function () {
+        form.dataset.submitting = '';
+        submitBtn.disabled = false;
+        submitBtn.textContent = initialSubmitText;
+        window.setTimeout(function () {
+            updateProgress();
+            if (message) message.textContent = 'Fields reset to the values loaded with this page.';
+        }, 0);
+    });
+
+    form.addEventListener('submit', function (event) {
+        const rooms = Number(document.getElementById('total_rooms').value);
+        const bedrooms = Number(document.getElementById('total_bedrooms').value);
+        if (bedrooms > rooms) {
+            event.preventDefault();
+            const bedroomField = document.getElementById('total_bedrooms');
+            bedroomField.setCustomValidity('Total bedrooms cannot exceed total rooms.');
+            bedroomField.reportValidity();
+            bedroomField.addEventListener('input', function clearBedroomValidity() {
+                bedroomField.setCustomValidity('');
+                bedroomField.removeEventListener('input', clearBedroomValidity);
+            });
+            return;
+        }
+        form.dataset.submitting = '1';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Predicting…';
+        if (message) message.textContent = 'Your estimate is being calculated. Please wait…';
+    });
+
+    // Clear any custom validation message as the user edits its field.
+    document.getElementById('total_bedrooms').addEventListener('input', function () {
+        this.setCustomValidity('');
+    });
+
+    const pin = document.getElementById('range-pin');
+    if (pin) pin.style.left = pin.dataset.pos + '%';
+
+    const target = document.getElementById('result') || document.getElementById('error');
+    if (target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+
+    updateProgress();
+})();
+</script>
+</body>
+</html>
